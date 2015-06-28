@@ -23,7 +23,7 @@ threads = []
 currentClient = 0
 
 
-class Printer():
+class Printer(object):
     cur = ""
 
     def write(self, text):
@@ -46,28 +46,28 @@ class Printer():
 def asUnicode(s):
     try:
         return unicode(s)
-    except:
+    except NameError:  # python 3
         return str(s)
 
 
 def ensureUtf(s):
-    if type(s) == unicode:
-        return s.encode('utf8', 'ignore')
-    else:
+    try:
+        return s.decode('utf8', 'ignore')
+    except AttributeError:
         return str(s)
 
 
 def findLoc(body, line, total):
-    for i in range(len(body)):
-        if body[i].lineno == line:
+    for i, bi in enumerate(body):
+        if bi.lineno == line:
             if i + 1 >= len(body):
-                return {"start": body[i].lineno, "end": total}
+                return {"start": bi.lineno, "end": total}
             else:
-                return {"start": body[i].lineno, "end": body[i + 1].lineno - 1}
-        elif body[i].lineno > line and line != 0:
-            return {"start": body[i - 1].lineno, "end": body[i].lineno - 1}
-        elif body[i].lineno < line and i + 1 == len(body) and line <= total:
-            return {"start": body[i].lineno, "end": total}
+                return {"start": bi.lineno, "end": body[i + 1].lineno - 1}
+        elif bi.lineno > line and line != 0:
+            return {"start": body[i - 1].lineno, "end": bi.lineno - 1}
+        elif bi.lineno < line and i + 1 == len(body) and line <= total:
+            return {"start": bi.lineno, "end": total}
     return None
 
 
@@ -103,7 +103,7 @@ def toModule(path):
         return sys.modules[name]
     else:
         parts = name.split(".")
-        for idx in range(len(parts)):
+        for idx, _ in enumerate(parts):
             mname = ".".join(parts[:idx + 1])
             __import__(mname)
         exec("import sys", sys.modules[name].__dict__)
@@ -118,8 +118,8 @@ def explodeCode(string):
     a = ast.parse(string)
     forms = []
     totalForms = len(a.body)
-    for i in range(totalForms):
-        start = a.body[i].lineno
+    for i, bi in enumerate(a.body):
+        start = bi.lineno
         if i >= totalForms - 1:
             end = total
         else:
