@@ -13,45 +13,52 @@ respond = None
 pp = pprint.PrettyPrinter()
 
 try:
-  ipy = sys.modules['__main__'].__dict__['get_ipython']()
+    ipy = sys.modules['__main__'].__dict__['get_ipython']()
 except:
-  ipy = None
+    ipy = None
+
 
 def toModuleNameByPath(path):
-  cur = [os.path.splitext(os.path.basename(path))[0]]
-  p = os.path.dirname(path);
-  while os.path.exists(os.path.join(p, "__init__.py")):
-    cur.insert(0, os.path.basename(p))
-    p = os.path.dirname(p)
-  return ".".join(cur)
+    cur = [os.path.splitext(os.path.basename(path))[0]]
+    p = os.path.dirname(path)
+    while os.path.exists(os.path.join(p, "__init__.py")):
+        cur.insert(0, os.path.basename(p))
+        p = os.path.dirname(p)
+    return ".".join(cur)
+
 
 def setRespond(s):
-  global respond
-  respond = s
+    global respond
+    respond = s
+
 
 def watch(exp, meta):
-  if not ipy and respond:
-    respond(None, "clients.raise-on-object", [meta["obj"], "editor.eval.python.watch", {"meta": meta, "result": pp.pformat(exp)}]);
-  else:
-    sys.stdout.write("__WATCH " + pickle.dumps({"meta": meta, "result": pp.pformat(exp)}))
-  return exp
+    if not ipy and respond:
+        respond(None, "clients.raise-on-object",
+                [meta["obj"], "editor.eval.python.watch", {"meta": meta, "result": pp.pformat(exp)}])
+    else:
+        sys.stdout.write(
+            "__WATCH " + pickle.dumps({"meta": meta, "result": pp.pformat(exp)}))
+    return exp
+
 
 def toModule(path):
-  name = toModuleNameByPath(path)
-  if name in sys.modules:
-    return sys.modules[name]
-  else:
-    parts = name.split(".")
-    for idx in range(len(parts)):
-      mname = ".".join(parts[:idx+1])
-      __import__(mname)
-    exec("import sys", sys.modules[name].__dict__)
-    return sys.modules[name]
+    name = toModuleNameByPath(path)
+    if name in sys.modules:
+        return sys.modules[name]
+    else:
+        parts = name.split(".")
+        for idx in range(len(parts)):
+            mname = ".".join(parts[:idx + 1])
+            __import__(mname)
+        exec("import sys", sys.modules[name].__dict__)
+        return sys.modules[name]
+
 
 def switch_ns(path):
-  module = toModule(path)
-  ipy.init_create_namespaces(module)
-  ipy.init_user_ns()
+    module = toModule(path)
+    ipy.init_create_namespaces(module)
+    ipy.init_user_ns()
 
 #----------------------------------------------------------
 # VirtualEnv magic
